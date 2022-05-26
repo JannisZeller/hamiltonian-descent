@@ -4,6 +4,7 @@
 import warnings
 from typing import Callable
 
+import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 
@@ -13,6 +14,7 @@ import tensorflow.keras as keras
 
 
 # %% Implementation
+# Implementation of custom tf/tf.keras optimizer inspired by https://cloudxlab.com/blog/writing-custom-optimizer-in-tensorflow-and-keras/
 #-------------------------------------------------------------------------------
 
 class KineticEnergyGradients():
@@ -54,28 +56,25 @@ class KineticEnergyGradients():
 
 
 class Hagrad(keras.optimizers.Optimizer):
+    _significant_decimals_delta: int=4
 
     def __init__(self, 
         epsilon: float=1., 
         gamma:   float=10., 
         name:    str="hagrad", 
-        kinetic_energy: str="relativistic", # DEPRECATED
-
-        # TODO
         kinetic_energy_gradient: Callable[[tf.Tensor], tf.Tensor]=KineticEnergyGradients.relativistic,
 
         **kwargs
     ): 
         """Call super().__init__() and use _set_hyper() to store hyperparameters"""
         super().__init__(name, **kwargs)
-        self.kinetic_energy = kwargs.get("kinetic_energy", kinetic_energy)
-
-        # TODO
         self.kinetic_energy_gradient = kwargs.get("kinetic_energy_gradient", kinetic_energy_gradient)
-
         self._set_hyper("epsilon", kwargs.get("lr", epsilon)) 
         self._set_hyper("gamma", kwargs.get("gamma", gamma))
-        self._set_hyper("delta", 1. / (1. + kwargs.get("lr", epsilon)*kwargs.get("gamma", gamma) ))
+
+        delta =  1. / (1. + kwargs.get("lr", epsilon)*kwargs.get("gamma", gamma) )
+        n = self._significant_decimals_delta -int(np.floor(np.log10(abs(delta))))-1
+        self._set_hyper("delta", round(delta, n))
 
         if self.kinetic_energy_gradient.__name__ == "power_1norm":
             warnings.warn("The power_1norm kinetic energy gradient typically leads to divergence!")
@@ -96,9 +95,8 @@ class Hagrad(keras.optimizers.Optimizer):
         p_var = self.get_slot(var, "hamilton_momentum")
         epsilon = self._get_hyper("epsilon", var_dtype)
         delta   = self._get_hyper("delta", var_dtype)
-        p_var.assign(delta * p_var - epsilon * delta * grad)
 
-        # TODO
+        p_var.assign(delta * p_var - epsilon * delta * grad)
         var.assign_add(epsilon * self.kinetic_energy_gradient(p_var))
 
 
@@ -127,7 +125,6 @@ class Hagrad(keras.optimizers.Optimizer):
             'epsilon': self._serialize_hyperparameter("epsilon"),
             'gamma':   self._serialize_hyperparameter("gamma"),
             'delta':   self._serialize_hyperparameter("delta"),
-            'kinetic_energy': "deprecated", ## DEPRECATED
             'kinetic_energy_gradient': self.kinetic_energy_gradient.__doc__
         }
 
