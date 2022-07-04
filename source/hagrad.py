@@ -97,8 +97,6 @@ class Hagrad(keras.optimizers.Optimizer):
         p0_std  = self._get_hyper("p0_std", var_dtype)
         for var in var_list:
             self.add_slot(var, "hamilton_momentum", tf.random_normal_initializer(mean=p0_mean, stddev=p0_std)) 
-        ## Checkup
-        # print(self._weights)
 
 
     @tf.function
@@ -115,21 +113,11 @@ class Hagrad(keras.optimizers.Optimizer):
         p_var.assign(delta * p_var - eps_delta * grad)
         var.assign_add(epsilon * self.kinetic_energy_gradient(p_var))
 
-
         # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
         ## -> It seems like some (small amount of) computation time can be saved, if one does 
         #  not use conditions or a property to store different kinetic energy gradients.
         # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
 
-
-        # var.assign_add(epsilon * p_var) 
-
-        ## DEPRECATED
-        # if self.kinetic_energy == "classical":
-        #     var.assign_add(epsilon * p_var)
-
-        # if self.kinetic_energy == "relativistic":
-        #     var.assign_add(epsilon * p_var / tf.math.sqrt(tf.math.square(tf.norm(p_var)) + 1.))
 
     def _resource_apply_sparse(self, grad, var):
         raise NotImplementedError
