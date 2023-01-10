@@ -1,14 +1,24 @@
+##### HaGraD #####
+# - - - - - - - - 
+# Source file for the HaGraD optimizer.
+# Import as `import Hagrad from hagrad`.
+# ------------------------------------------------------------------------------
+
+
+
 # %% Imports
 # ------------------------------------------------------------------------------
 
 from typing import Callable
-import warnings
-
+import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
-
 from kinetic_energy_gradients import KineticEnergyGradients
+
 # ------------------------------------------------------------------------------
+
+
+
 
 # %% Implementation
 # Implementation of custom tf/tf.keras optimizer inspired by 
@@ -24,12 +34,12 @@ class Hagrad(keras.optimizers.Optimizer):
         p0_mean: float=1.,
         p0_std:  float=2.,
         **kwargs): 
-        """Call super().__init__() and use _set_hyper() to store hyperparameters"""
+
+        ## Call super().__init__() and...
         super().__init__(name, **kwargs)
         
+        ## ...use _set_hyper() to store hyperparameters
         self.kinetic_energy_gradient: Callable[[tf.Tensor], tf.Tensor] = kinetic_energy_gradient
-        # Set hyperparameters for optimizer 
-        
         self._set_hyper("epsilon", epsilon) 
         self._set_hyper("gamma",   gamma)
         self._set_hyper("p0_mean", p0_mean) 
@@ -85,10 +95,34 @@ class Hagrad(keras.optimizers.Optimizer):
 
 
 
-# %%
+# %% Main (Test Case)
 # ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    print("Hagrad-Optimizer implementation source file.")
+    print("Running HaGraD test case.")
+
+    ## Define Optimizer
+    hagrad = Hagrad(kinetic_energy_gradient=KineticEnergyGradients.power())
+    hagrad.get_config()
+
+    ## Generating Data
+    X = 2 * (np.random.rand(1000, 2) - 0.5)
+    y = np.array(X[:, 0] * X[:, 1] > 0, np.int32)
+
+    ## Define Model
+    model = keras.models.Sequential([
+        keras.layers.Flatten(),
+        keras.layers.Dense(8, activation="relu"),
+        keras.layers.Dense(8, activation="relu"),
+        keras.layers.Dense(1, activation="sigmoid")
+    ])
+
+    ## Compile Model
+    model.compile(
+        loss=keras.losses.binary_crossentropy, 
+        optimizer=hagrad, 
+        metrics=["accuracy"])
+    
+    model.fit(X, y, epochs=10, batch_size=32)
 
 # ------------------------------------------------------------------------------
