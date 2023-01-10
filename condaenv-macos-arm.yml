@@ -109,5 +109,3 @@ dependencies:
   - yarl=1.8.2
   - zipp=3.11.0
   - zlib=1.2.13
-  - pip:
-      - tensorflow-metal==0.7.0
