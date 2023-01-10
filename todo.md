@@ -4,3 +4,4 @@
 - readme besser
 - andere NNs (z. B. Resnet18)
 - ein notebook mit NLP (sparse?!)?
+- Dateistruktur repo
