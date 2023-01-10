@@ -1,5 +1,5 @@
 # %% Imports
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import warnings
 from typing import Callable
@@ -8,14 +8,15 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 
 
 # %% Implementation
-# Implementation of custom tf/tf.keras optimizer inspired by https://cloudxlab.com/blog/writing-custom-optimizer-in-tensorflow-and-keras/
-#-------------------------------------------------------------------------------
+# Implementation of custom tf/tf.keras optimizer inspired by 
+# https://cloudxlab.com/blog/writing-custom-optimizer-in-tensorflow-and-keras/
+# ------------------------------------------------------------------------------
 
 class KineticEnergyGradients():
     """This class provides several functions which serve as kinetic energy gradients in Hagrad.
@@ -132,15 +133,15 @@ class Hagrad(keras.optimizers.Optimizer):
             'kinetic_energy_gradient': self.kinetic_energy_gradient.__doc__
         }
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 
 
 # %%
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     print("Hagrad-Optimizer implementation source file.")
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
