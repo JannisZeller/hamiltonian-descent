@@ -2,61 +2,34 @@
 # ------------------------------------------------------------------------------
 
 from typing import Callable
+import warnings
 
-import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
 
+from kinetic_energy_gradients import KineticEnergyGradients
 # ------------------------------------------------------------------------------
-
-
-
 
 # %% Implementation
 # Implementation of custom tf/tf.keras optimizer inspired by 
 # https://cloudxlab.com/blog/writing-custom-optimizer-in-tensorflow-and-keras/
 # ------------------------------------------------------------------------------
-
-class KineticEnergyGradients():
-    """This class provides several functions which serve as kinetic energy gradients in Hagrad.
-    """
-
-    @tf.function
-    def classical(p_var: tf.Tensor) -> tf.Tensor:
-        """Classical kinetic energy ||p||^2/2 with gradient p."""
-        return(p_var)
-
-    @tf.function
-    def relativistic(p_var: tf.Tensor) -> tf.Tensor:
-        """Relativistic kinetic energy sqrt( ||p||^2 + 1 )-1 with gradient p/sqrt( ||p||^2 + 1 )"""
-        return(p_var / tf.math.sqrt(tf.math.square(tf.norm(p_var)) + 1.))
-
-    def power(self, power_a=2., power_A=1.) -> Callable[[tf.Tensor, tf.Tensor], tf.Tensor]:
-        """Power kinetic energy (1/A) * ( ||p||^a + 1 )^(A/a) - (1/A) with gradient p * ||p||^(a-2) * ( ||p||^a + 1 )^(A/a-1)"""
-        a = float(power_a)
-        A = float(power_A)
-        @tf.function
-        def power_func(p_var: tf.Tensor) -> tf.Tensor:
-            #"""Power kinetic energy (1/A) * ( ||p||^a + 1 )^(A/a) - (1/A) with gradient p * ||p||^(a-2) * ( ||p||^a + 1 )^(A/a-1)"""
-            p_norm = tf.norm(p_var)
-            return(p_var*p_norm**(a-2.) * (p_norm**a + 1.)**(A/a-1.))
-        power_func.__doc__ = f"Power kinetic energy (1/{A}) * ( ||p||^{a} + 1 )^({A}/{a}) - (1/{A}) with gradient p * ||p||^({a}-2) * ( ||p||^{a} + 1 )^({A}/{a}-1)"
-        return power_func
-
-
 class Hagrad(keras.optimizers.Optimizer):
 
     def __init__(self, 
         epsilon: float=1., 
         gamma:   float=10., 
         name:    str="hagrad", 
-        kinetic_energy_gradient: Callable[[tf.Tensor], tf.Tensor]=KineticEnergyGradients.relativistic,
+        kinetic_energy_gradient: Callable[[tf.Tensor], tf.Tensor]=KineticEnergyGradients.relativistic(),
         p0_mean: float=1.,
         p0_std:  float=2.,
         **kwargs): 
         """Call super().__init__() and use _set_hyper() to store hyperparameters"""
         super().__init__(name, **kwargs)
-        self.kinetic_energy_gradient = kinetic_energy_gradient
+        
+        self.kinetic_energy_gradient: Callable[[tf.Tensor], tf.Tensor] = kinetic_energy_gradient
+        # Set hyperparameters for optimizer 
+        
         self._set_hyper("epsilon", epsilon) 
         self._set_hyper("gamma",   gamma)
         self._set_hyper("p0_mean", p0_mean) 
@@ -79,7 +52,7 @@ class Hagrad(keras.optimizers.Optimizer):
         p0_std  = self._get_hyper("p0_std", var_dtype)
         for var in var_list:
             self.add_slot(var, "hamilton_momentum", tf.random_normal_initializer(mean=p0_mean, stddev=p0_std)) 
-
+    
 
     @tf.function
     def _resource_apply_dense(self, grad, var):
