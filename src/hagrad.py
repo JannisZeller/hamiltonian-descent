@@ -2,6 +2,10 @@
 # - - - - - - - - 
 # Source file for the HaGraD optimizer.
 # Import as `import Hagrad from hagrad`.
+# 
+# To run the test case, execute something like 
+#   `python -m src.hagrad` 
+# in the terminal.
 # ------------------------------------------------------------------------------
 
 
@@ -13,7 +17,7 @@ from typing import Callable
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
-from kinetic_energy_gradients import KineticEnergyGradients
+from .kinetic_energy_gradients import KineticEnergyGradients
 
 # ------------------------------------------------------------------------------
 
@@ -100,12 +104,13 @@ class Hagrad(keras.optimizers.Optimizer):
 
 if __name__ == "__main__":
     print("Running HaGraD test case.")
+    print("-------------------------")
 
     ## Define Optimizer
-    hagrad = Hagrad(kinetic_energy_gradient=KineticEnergyGradients.power())
+    hagrad = Hagrad(kinetic_energy_gradient=KineticEnergyGradients.relativistic())
     hagrad.get_config()
 
-    ## Generating Data
+    ## Generating Data (checkerboard)
     X = 2 * (np.random.rand(1000, 2) - 0.5)
     y = np.array(X[:, 0] * X[:, 1] > 0, np.int32)
 
@@ -124,5 +129,8 @@ if __name__ == "__main__":
         metrics=["accuracy"])
     
     model.fit(X, y, epochs=10, batch_size=32)
+
+    print("Tests completed successfully.")
+    print("-----------------------------")
 
 # ------------------------------------------------------------------------------
