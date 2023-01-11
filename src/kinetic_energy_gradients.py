@@ -6,7 +6,7 @@ class KineticEnergyGradients():
     Provides several functions which serve as kinetic energy gradients in Hagrad.
     """
     @staticmethod
-    def classical() -> Callable[[tf.Tensor], tf.Tensor]:
+    def classical() -> Callable:
         @tf.function
         def classical_func(p_var: tf.Tensor) -> tf.Tensor:
             """Classical kinetic energy ||p||^2/2 with gradient p."""
@@ -15,7 +15,7 @@ class KineticEnergyGradients():
         return classical_func
 
     @staticmethod
-    def relativistic() -> Callable[[tf.Tensor], tf.Tensor]:       
+    def relativistic() -> Callable:       
         @tf.function
         def relativistic_func(p_var: tf.Tensor) -> tf.Tensor:
             """Relativistic kinetic energy sqrt( ||p||^2 + 1 )-1 with gradient p/sqrt( ||p||^2 + 1 )"""
@@ -24,7 +24,7 @@ class KineticEnergyGradients():
         return relativistic_func
 
     @staticmethod
-    def power(a: float = 2., A: float = 1.) -> Callable[[tf.Tensor, tf.Tensor], tf.Tensor]:
+    def power(a: float = 2., A: float = 1.) -> Callable:
         a = float(a)
         A = float(A)
         
