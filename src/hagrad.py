@@ -80,9 +80,19 @@ class Hagrad(keras.optimizers.Optimizer):
         p_var.assign(delta * p_var - eps_delta * grad)
         var.assign_add(epsilon * self.kinetic_energy_gradient(p_var))
 
+    @tf.function
+    def _resource_apply_sparse(self, grad, var, indices):
+        var_dtype = var.dtype.base_dtype
+        p_var = self.get_slot(var, "hamilton_momentum")
+        epsilon = self._get_hyper("epsilon", var_dtype)
+        delta   = self._get_hyper("delta", var_dtype)
+        eps_delta = self._get_hyper("eps_delta", var_dtype)
+        p_var.assign(delta * p_var - eps_delta * grad)
+        # var.assign_add(epsilon * self.kinetic_energy_gradient(p_var))
+        var_ = self._resource_scatter_add(var, indices, epsilon * p_var)
+        var.assign(var_)
 
-    def _resource_apply_sparse(self, grad, var):
-        raise NotImplementedError
+
 
     def get_config(self):
         base_config = super().get_config()
@@ -95,6 +105,16 @@ class Hagrad(keras.optimizers.Optimizer):
         }
 
 # ------------------------------------------------------------------------------
+
+
+# %%
+# import tensorflow as tf
+# x = tf.sparse.SparseTensor(
+#     indices=[[0, 3], [2, 4]],
+#     values=[10, 20],
+#     dense_shape=[3, 10])
+
+
 
 
 
