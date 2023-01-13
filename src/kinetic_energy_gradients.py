@@ -29,19 +29,17 @@ class KineticEnergyGradients():
     """
     @staticmethod
     def classical() -> Callable:
-        @tf.function
-        def classical_func(p_var: tf.Tensor) -> tf.Tensor:
+        def classical_func(p: tf.Tensor) -> tf.Tensor:
             """Classical kinetic energy ||p||^2/2 with gradient p."""
-            return p_var
+            return p
         
         return classical_func
 
     @staticmethod
-    def relativistic() -> Callable:       
-        @tf.function
-        def relativistic_func(p_var: tf.Tensor) -> tf.Tensor:
+    def relativistic() -> Callable:
+        def relativistic_func(p: tf.Tensor) -> tf.Tensor:
             """Relativistic kinetic energy sqrt( ||p||^2 + 1 )-1 with gradient p/sqrt( ||p||^2 + 1 )"""
-            return( p_var / tf.math.sqrt(tf.math.square(tf.norm(p_var)) + 1.) )
+            return( p / tf.math.sqrt(tf.math.square(tf.norm(p)) + 1.) )
         
         return relativistic_func
 
@@ -50,11 +48,10 @@ class KineticEnergyGradients():
         a = float(a)
         A = float(A)
         
-        @tf.function
-        def power_func(p_var: tf.Tensor) -> tf.Tensor:
+        def power_func(p: tf.Tensor) -> tf.Tensor:
             # docstring appended afterwards
-            p_norm = tf.norm(p_var)
-            return( p_var*p_norm**(a-2.) * (p_norm**a + 1.)**(A/a - 1.) )
+            p_norm = tf.norm(p)
+            return( p * p_norm**(a-2.) * (p_norm**a + 1.)**(A/a - 1.) )
         power_func.__doc__ = f"Power kinetic energy (1/{A}) * ( ||p||^{a} + 1 )^({A}/{a}) - (1/{A}) with gradient p * ||p||^({a}-2) * ( ||p||^{a} + 1 )^({A}/{a}-1)"
         
         return power_func
