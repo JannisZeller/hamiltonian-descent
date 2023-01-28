@@ -24,9 +24,11 @@ from typing import Callable
 # %% Implementation
 # ------------------------------------------------------------------------------
 class KineticEnergyGradients():
-    """Provides several functions which serve as kinetic energy gradients in 
-    Hagrad.
+    """Provides several functions which serve as kinetic energy gradients for the 
+    HaGraD optimizer.
     """
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     @staticmethod
     def classical() -> Callable:
         def classical_func(p: tf.Tensor) -> tf.Tensor:
@@ -35,6 +37,8 @@ class KineticEnergyGradients():
         
         return classical_func
 
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     @staticmethod
     def relativistic() -> Callable:
         def relativistic_func(p: tf.Tensor) -> tf.Tensor:
@@ -43,6 +47,8 @@ class KineticEnergyGradients():
         
         return relativistic_func
 
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     @staticmethod
     def power(a: float = 2., A: float = 1.) -> Callable:
         a = float(a)

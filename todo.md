@@ -1,4 +1,0 @@
-- Condaenv Update mit Pandas
-- Repo update schön und öffi
-- hagrad paket
-- readme besser

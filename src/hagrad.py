@@ -29,7 +29,6 @@ from .kinetic_energy_gradients import KineticEnergyGradients
 # https://cloudxlab.com/blog/writing-custom-optimizer-in-tensorflow-and-keras/
 # ------------------------------------------------------------------------------
 class Hagrad(keras.optimizers.Optimizer):
-
     def __init__(self, 
         epsilon: float=1., 
         gamma:   float=10., 
@@ -38,7 +37,10 @@ class Hagrad(keras.optimizers.Optimizer):
         p0_mean: float=1.,
         p0_std:  float=2.,
         **kwargs): 
-
+        """Returns Hagrad - a keras optimizer. Tested with image and text data. 
+        As reliable as SGD but with faster convergence. Refer to the README for
+        the usage of parameters.
+        """
         ## Call super().__init__() and...
         super().__init__(name, **kwargs)
         
@@ -57,6 +59,7 @@ class Hagrad(keras.optimizers.Optimizer):
         self._set_hyper("eps_delta", eps_delta)
     
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     def _create_slots(self, var_list):
         """For each model variable, create the optimizer variable associated with it.
         TensorFlow calls these optimizer variables "slots".
@@ -73,9 +76,11 @@ class Hagrad(keras.optimizers.Optimizer):
                 tf.random_normal_initializer(mean=p0_mean, stddev=p0_std)) 
     
 
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     @tf.function
     def _resource_apply_dense(self, grad, var):
-        """Update the slots and perform one optimization step for one model variable
+        """Update variables and auxiliary slots (dense).
         """
         var_dtype = var.dtype.base_dtype
         epsilon     = self._get_hyper("epsilon", var_dtype)
@@ -88,8 +93,11 @@ class Hagrad(keras.optimizers.Optimizer):
         var.assign_add(epsilon * self.kinetic_energy_gradient(p))
 
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     @tf.function
     def _resource_apply_sparse(self, grad, var, indices):
+        """Update variables and auxiliary slots (sparse).
+        """
         var_dtype = var.dtype.base_dtype
         epsilon     = self._get_hyper("epsilon", var_dtype)
         delta       = self._get_hyper("delta", var_dtype)
@@ -106,7 +114,10 @@ class Hagrad(keras.optimizers.Optimizer):
         var.assign_add(epsilon * self.kinetic_energy_gradient(p))
 
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     def get_config(self):
+        """Get the configuration.
+        """
         base_config = super().get_config()
         return {
             **base_config,
