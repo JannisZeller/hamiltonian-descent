@@ -19,6 +19,10 @@ import tensorflow as tf
 import tensorflow.keras as keras
 from .kinetic_energy_gradients import KineticEnergyGradients
 
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import math_ops
+from tensorflow.python.ops import init_ops_v2
+
 # ------------------------------------------------------------------------------
 
 
@@ -29,6 +33,20 @@ from .kinetic_energy_gradients import KineticEnergyGradients
 # https://cloudxlab.com/blog/writing-custom-optimizer-in-tensorflow-and-keras/
 # ------------------------------------------------------------------------------
 class Hagrad(keras.optimizers.Optimizer):
+    r"""Optimizer that implements the Hamiltonian Gradient Descent algorithm.
+    This optimizer 
+
+    Usage Example:
+        >>> opt = tf.keras.optimizers.Hagrad()
+        >>> var1 = tf.Variable(10.0)
+        >>> loss = lambda: (var1 ** 2) / 2.0
+        >>> step_count = opt.minimize(loss, [var1]).numpy()
+        >>> "{:.1f}".format(var1.numpy())
+        9.4
+
+    Reference:
+        - [Maddison et al. (2018)](https://arxiv.org/abs/1809.05042).
+    """
     def __init__(self, 
         epsilon: float=1., 
         gamma:   float=10., 
@@ -41,10 +59,7 @@ class Hagrad(keras.optimizers.Optimizer):
         As reliable as SGD but with faster convergence. Refer to the README for
         the usage of parameters.
         """
-        ## Call super().__init__() and...
         super().__init__(name, **kwargs)
-        
-        ## ...use _set_hyper() to store hyperparameters
         if kinetic_energy_gradient == None:
             self.kinetic_energy_gradient = KineticEnergyGradients.relativistic()
         else:
@@ -61,10 +76,6 @@ class Hagrad(keras.optimizers.Optimizer):
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     def _create_slots(self, var_list):
-        """For each model variable, create the optimizer variable associated with it.
-        TensorFlow calls these optimizer variables "slots".
-        For momentum optimization, we need one momentum slot per model variable.
-        """
         var_dtype = var_list[0].dtype.base_dtype
 
         ## Initializing kinetic energy for t=0.
@@ -73,15 +84,12 @@ class Hagrad(keras.optimizers.Optimizer):
         for var in var_list:
             self.add_slot(
                 var, "hamilton_momentum",
-                tf.random_normal_initializer(mean=p0_mean, stddev=p0_std)) 
+                init_ops_v2.random_normal_initializer(mean=p0_mean, stddev=p0_std))  # tf.random_normal_initializer(mean=p0_mean, stddev=p0_std)) 
     
-
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     @tf.function
     def _resource_apply_dense(self, grad, var):
-        """Update variables and auxiliary slots (dense).
-        """
         var_dtype = var.dtype.base_dtype
         epsilon     = self._get_hyper("epsilon", var_dtype)
         delta       = self._get_hyper("delta", var_dtype)
@@ -96,8 +104,6 @@ class Hagrad(keras.optimizers.Optimizer):
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     @tf.function
     def _resource_apply_sparse(self, grad, var, indices):
-        """Update variables and auxiliary slots (sparse).
-        """
         var_dtype = var.dtype.base_dtype
         epsilon     = self._get_hyper("epsilon", var_dtype)
         delta       = self._get_hyper("delta", var_dtype)
@@ -105,9 +111,9 @@ class Hagrad(keras.optimizers.Optimizer):
 
         p = self.get_slot(var, "hamilton_momentum")
 
-        p_ = tf.tensor_scatter_nd_add(
+        p_ = math_ops.tensor_scatter_nd_add( # tf.tensor_scatter_nd_add(
             delta*p, 
-            tf.expand_dims(indices, -1), 
+            array_ops.expand_dims(indices, -1),  # tf.expand_dims(indices, -1), 
             eps_delta*grad)
 
         p.assign(p_)
@@ -116,8 +122,6 @@ class Hagrad(keras.optimizers.Optimizer):
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     def get_config(self):
-        """Get the configuration.
-        """
         base_config = super().get_config()
         return {
             **base_config,
