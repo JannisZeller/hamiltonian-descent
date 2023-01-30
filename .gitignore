@@ -1,5 +1,5 @@
 __pycache__/
-
+./notebooks/_quicktest.ipynb
 .vscode
 .ipynb_checkpoints
 .DS_Store
