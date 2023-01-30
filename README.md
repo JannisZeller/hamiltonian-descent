@@ -72,8 +72,8 @@ For neural networks, the most commonly used method is SGD.
 
 We set up HaGraD using TensorFlow version 2.6. This is just a little side project, so we apologize for not having the time to set up a proper python package or something for easy import and direct usage with your code until now. Feel free to simply use the files from [./src](./src/) and alter them according to your needs. They can then easily be imported to other python scripts or notebooks using pythons import logic. A HaGraD optimizer consists of the base class `Hagrad`, which can be imported from its source-file [hagrad.py](./src/hagrad.py), and a kinetic energy function's gradient. The kinetic energy is not fixed per se but we provide three standard choices that are also mentioned in [Maddison et al. (2018)](https://arxiv.org/abs/1809.05042), namely:
 - Classic Kinetic Energy: $$T = \frac{p^2}{2} \qquad \Rightarrow \qquad \nabla_pT = p .$$
-- Relativistic Kinetic Energy $$T = \sqrt{\vert\vert p\vert\vert^2+1}-1 \qquad \Rightarrow \qquad \nabla_p T = \frac{p}{\sqrt{\vert\vert p\vert\vert^2 + 1}}$$
-- "Power" Kinetic Energy $$T = \frac{1}{A}\cdot \big(\vert\vert p\vert\vert^a+1\big)^{A/a}-\frac{1}{A} \qquad \Rightarrow \qquad \nabla_p T = p \cdot \vert\vert p\vert\vert^{a-2} \cdot \big( \vert\vert p\vert\vert|^{a} + 1 \big)^{A/a-1}$$
+- Relativistic Kinetic Energy $$T = \sqrt{\vert\vert p\vert\vert^2+1}-1 \qquad \Rightarrow \qquad \nabla_p T = \frac{p}{\sqrt{\vert\vert p\vert\vert^2 + 1}}.$$
+- "Power" Kinetic Energy $$T = \frac{1}{A}\cdot \big(\vert\vert p\vert\vert^a+1\big)^{A/a}-\frac{1}{A} \qquad \Rightarrow \qquad \nabla_p T = p \cdot \vert\vert p\vert\vert^{a-2} \cdot \big( \vert\vert p\vert\vert|^{a} + 1 \big)^{A/a-1}.$$
 
 We mainly used the first two of the three and decided to set the default to the relativistic kinetic energy. The class `KineticEnergyGradients` in [kinetic_energy_gradients](./src/kinetic_energy_gradients.py) provides these three as static methods.
 
