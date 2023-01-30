@@ -55,15 +55,9 @@ In addition to the differences in requirements on the objective function, optimi
 
 
 
-## Hamiltonian Descent methods
+### Hamiltonian Descent Algorithm
 
-This section is a summary of the HD methods proposed by Maddison et al. (2018). HD methods describe a set of first-order unconstrained optimization methods (i.e. $f \in C^1$) for convex functions. By incorporating the Hamiltonian Framework, it is possible to use the kinetic energy $k(p_t)$ (with $p_t$ being the momentum of $x$ at time $t$) and it's respective $\nabla k$ to obtain additional information about the objective function $f$. In order to be able to obtain linear convergence, the kinetic energy must be chosen proportional to the convex conjugate of $f(x): k(p) \propto f^\star(p) + f^\star(-p)$ (with $f^\star$ being the convex conjugate of $f$, for intuition see [Le Priol, 2020](https://remilepriol.github.io/dualityviz/)). This assumption can be relaxed to $k(p)\geq \alpha \max\{f^\star(p), f^\star(-p)\}, \; 0 < \alpha \leq 1$ while maintaining linear convergence. Furthermore, depending on the nature of $f$, $k$ must be chosen appropriately to ensure linear convergence.
-
-An apparent benefit of the *HD* method is that it achieves linear convergence while using a fixed step size. 
-
-For neural networks, the most commonly used method is SGD.
-
-* SGD: Sublinear convergence $\mathcal{O} \left(\dfrac{1}{k}\right)$ with $k = 1, ..., \infty$ being the iteration
+Our implementation of HD follows the first explicit algorithm from [Maddison et al. (2018, p. 17)](https://arxiv.org/pdf/1809.05042.pdf). I. e. given $V, T:\mathbb R^F \to \mathbb R$, $\epsilon, \gamma \in (0, \infty)$, $x_0, p_0 \in \mathbb R^F$, and $\delta = (1+\gamma \epsilon)^{-1}$. Then update (until convergence or for a fixed number of steps): $$\begin{align*} p_{k+1} &= \delta p_k - \epsilon \delta \nabla_x V(x_k) \\ x_{k+1} &= \delta x_k + \epsilon \nabla_p T(p_k) \end{align*}.$$ Refer to the original paper for discussion of convergence, constraints, and limitations. We mainly go for the applied part. 
 
 
 
