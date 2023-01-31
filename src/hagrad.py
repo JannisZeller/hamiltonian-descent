@@ -15,13 +15,16 @@
 
 from typing import Callable
 import numpy as np
-import tensorflow as tf
 import tensorflow.keras as keras
+# from tensorflow.python.keras.optimizer_v2 import optimizer_v2
 from .kinetic_energy_gradients import KineticEnergyGradients
 
+from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import init_ops_v2
+from tensorflow.python.ops import state_ops
+from tensorflow.python.ops import control_flow_ops
 
 # ------------------------------------------------------------------------------
 
@@ -32,7 +35,7 @@ from tensorflow.python.ops import init_ops_v2
 # Implementation of custom tf/tf.keras optimizer inspired by 
 # https://cloudxlab.com/blog/writing-custom-optimizer-in-tensorflow-and-keras/
 # ------------------------------------------------------------------------------
-class Hagrad(keras.optimizers.Optimizer):
+class Hagrad(keras.optimizers.Optimizer):  # (optimizer_v2.OptimizerV2):
     r"""Optimizer that implements the Hamiltonian Gradient Descent algorithm.
     This optimizer 
 
@@ -84,11 +87,10 @@ class Hagrad(keras.optimizers.Optimizer):
         for var in var_list:
             self.add_slot(
                 var, "hamilton_momentum",
-                init_ops_v2.random_normal_initializer(mean=p0_mean, stddev=p0_std))  # tf.random_normal_initializer(mean=p0_mean, stddev=p0_std)) 
+                init_ops_v2.random_normal_initializer(mean=p0_mean, stddev=p0_std))
     
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-    @tf.function
     def _resource_apply_dense(self, grad, var):
         var_dtype = var.dtype.base_dtype
         epsilon     = self._get_hyper("epsilon", var_dtype)
@@ -96,13 +98,12 @@ class Hagrad(keras.optimizers.Optimizer):
         eps_delta   = self._get_hyper("eps_delta", var_dtype)
 
         p = self.get_slot(var, "hamilton_momentum")
-
-        p.assign(delta * p + eps_delta * grad)
-        var.assign_add(epsilon * self.kinetic_energy_gradient(p))
+        p = state_ops.assign(p, delta * p + eps_delta * grad)
+        var_t = epsilon * self.kinetic_energy_gradient(p)
+        return state_ops.assign_add(var, var_t).op
 
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-    @tf.function
     def _resource_apply_sparse(self, grad, var, indices):
         var_dtype = var.dtype.base_dtype
         epsilon     = self._get_hyper("epsilon", var_dtype)
@@ -111,13 +112,18 @@ class Hagrad(keras.optimizers.Optimizer):
 
         p = self.get_slot(var, "hamilton_momentum")
 
-        p_ = math_ops.tensor_scatter_nd_add( # tf.tensor_scatter_nd_add(
-            delta*p, 
-            array_ops.expand_dims(indices, -1),  # tf.expand_dims(indices, -1), 
-            eps_delta*grad)
+        p_eps_delta_grad = eps_delta*grad
+        p_t = state_ops.assign(p, delta*p)
+        with ops.control_dependencies([p_t]):
+            p_t = self._resource_scatter_add(
+                p_t, 
+                indices,
+                p_eps_delta_grad)
 
-        p.assign(p_)
-        var.assign_add(epsilon * self.kinetic_energy_gradient(p))
+        var_t = state_ops.assign_add(
+            var, epsilon * self.kinetic_energy_gradient(p_t))
+
+        return control_flow_ops.group(*[var_t, p_t])
 
 
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -142,6 +148,8 @@ class Hagrad(keras.optimizers.Optimizer):
 if __name__ == "__main__":
     print("Running HaGraD test case.")
     print("-------------------------")
+
+    import tensorflow.keras as keras
 
     ## Define Optimizer
     hagrad = Hagrad(
