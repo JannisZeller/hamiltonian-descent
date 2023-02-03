@@ -14,7 +14,6 @@
 # ------------------------------------------------------------------------------
 
 from typing import Callable
-import numpy as np
 import tensorflow.keras as keras
 # from tensorflow.python.keras.optimizer_v2 import optimizer_v2
 from .kinetic_energy_gradients import KineticEnergyGradients
@@ -149,7 +148,9 @@ if __name__ == "__main__":
     print("Running HaGraD test case.")
     print("-------------------------")
 
+    ## Setup
     import tensorflow.keras as keras
+    import numpy as np
 
     ## Define Optimizer
     hagrad = Hagrad(

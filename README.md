@@ -18,7 +18,7 @@ Creative as we ([Jannis Zeller](https://de.linkedin.com/in/jannis-zeller-12477a2
 
 ## Introduction
 
-Many commonly used optimization methods in Machine Learning (*ML*) show linear to sublinear convergence rates. Hamiltonian Descent Methods (*HD*) are a new method that extend linear convergence for a broader class of convex functions (Maddison et al., 2018). We provide a method that implements a specific HD in TensorFlow (`tf.keras`). In the [notebooks](./notebooks/) we compare the method's performance to stochastic gradient descent (*SGD*) and adaptive moment estimation (*Adam*) on two standard visual tasks an on one Natural Language Processing (NLP)-task.
+Many commonly used optimization methods in Machine Learning (*ML*) show linear to sublinear convergence rates. Hamiltonian Descent Methods (*HD*) are a method that extend linear convergence for a broader class of convex functions (Maddison et al., 2018). We provide implementations of a specific HD in TensorFlow (`tf.keras`) and PyTorch. In the [notebooks](./notebooks/) we compare the method's performance to stochastic gradient descent (*SGD*) and adaptive moment estimation (*Adam*) on standard visual tasks an on one Natural Language Processing (NLP)-task. This is just a side project with all scripts and notebooks executed locally. They are not completely unified and should just be viewed as first glimpse. 
 
 
 
@@ -31,7 +31,7 @@ This section provides a brief summary of the HD methods proposed by [Maddison et
 ### Hamiltonian Mechanics
 
 *Refer to any book in theoretical mechanics for the following.* Like other "Hamiltonian-labelled" approaches (e. g. [Hamiltonian Monte Carlo Sampling](https://arxiv.org/abs/2108.12107)) HD methods are rooted in physics. In classical mechanics a system and its propagation is fully specified by space coordinates $x \in \mathbb R^F$ and their corresponding first derivatives $\dot x = v \in \mathbb R^F$. The evolution of the system is then described by the equation of motion (2. Newtonian Axiom): $$m \ddot x = F(t, x, \dot x) ,$$
-where $m$ is the mass, $t$ is the time and $F$ is the acting force. This is roughly summarized for the sake of simplicity. First the [Lagrangian](https://en.wikipedia.org/wiki/Lagrangian_mechanics) and the the [Hamiltonian](https://en.wikipedia.org/wiki/Hamiltonian_mechanics) reformulations of classical mechanics generalized this. Without going into much details, in these reformulations each "position" variable $q$ corresponds to a "momentum" variable $p$ which are connected through functions $\mathcal L$ (Lagrangian) or $\mathcal H$ (Hamiltonian). In classical mechanics the Hamiltonian represents the total energy of the system consisting of potential energy $V$ and kinetic energy $T$: $$\mathcal H = T + V ,$$ where the functional form of $T$ depends on the setting. In the non-relativistic case it is $$T = \frac{p^2}{2m} .$$ The system then evolves following the equations of motion: $$\dot q = \frac{\partial \mathcal H}{\partial p} , \quad \textsf{and}\quad \dot p = - \frac{\partial \mathcal H}{\partial q}.$$
+where $m$ is the mass, $t$ is the time and $F$ is the acting force. This is roughly summarized for the sake of simplicity. First the [Lagrangian](https://en.wikipedia.org/wiki/Lagrangian_mechanics) and then the [Hamiltonian](https://en.wikipedia.org/wiki/Hamiltonian_mechanics) reformulations of classical mechanics generalized this. Without going into much details: in these reformulations, each "position" variable $q$ corresponds to a "momentum" variable $p$, that are connected through functions $\mathcal L$ (Lagrangian) or $\mathcal H$ (Hamiltonian). In classical mechanics the Hamiltonian represents the total energy of the system consisting of potential energy $V$ and kinetic energy $T$: $$\mathcal H = T + V ,$$ where the functional form of $T$ depends on the setting. In the non-relativistic case it is $$T = \frac{p^2}{2m} .$$ The system then evolves following the equations of motion: $$\dot q = \frac{\partial \mathcal H}{\partial p} , \quad \textsf{and}\quad \dot p = - \frac{\partial \mathcal H}{\partial q}.$$
 In present of *dissipation* (e. g. friction) the system evolves such that the potential energy is minimized; e. g. imagine a mass on a spring which is performing a damped oscillation. This already hints the usage as an optimization procedure: Assume a loss function of interest to be the potential energy and the parameters of the model to be the "position variables" $q$. Then initialize a "momentum variable" $p$ for each $q$ and propagate the system according to the equations of motion while keeping a dissipation term. The initialization of the momenta is somewhat arbitrary - we chose a Gaussian initialization.
 
 
@@ -57,12 +57,12 @@ In addition to the differences in requirements on the objective function, optimi
 
 ### Hamiltonian Descent Algorithm
 
-Our implementation of HD follows the first explicit algorithm from [Maddison et al. (2018, p. 17)](https://arxiv.org/pdf/1809.05042.pdf). I. e. given $V, T:\mathbb R^F \to \mathbb R$, $\epsilon, \gamma \in (0, \infty)$, $x_0, p_0 \in \mathbb R^F$, and $\delta = (1+\gamma \epsilon)^{-1}$. Then update (until convergence or for a fixed number of steps): $$\begin{align*} p_{k+1} &= \delta p_k - \epsilon \delta \nabla_x V(x_k) \\ x_{k+1} &= \delta x_k + \epsilon \nabla_p T(p_k) \end{align*}.$$ Refer to the original paper for discussion of convergence, constraints, and limitations. We mainly go for the applied part. 
+Our implementation of HD follows the first explicit algorithm from [Maddison et al. (2018, p. 17)](https://arxiv.org/pdf/1809.05042.pdf). I. e. given $V, T:\mathbb R^F \to \mathbb R$, $\epsilon, \gamma \in (0, \infty)$, $x_0, p_0 \in \mathbb R^F$, and $\delta = (1+\gamma \epsilon)^{-1}$. Then update (until convergence or for a fixed number of steps): $$p_{k+1} = \delta p_k - \epsilon \delta \nabla_x V(x_k) \\ x_{k+1} = x_k + \epsilon \nabla_p T(p_k).$$ Refer to the original paper for discussion of convergence, constraints, and limitations. We mainly go for the applied part. 
 
 
 
 
-## Usage of HaGraD
+## Usage of HaGraD in TensorFlow
 
 We set up HaGraD using TensorFlow version 2.6. This is just a little side project, so we apologize for not having the time to set up a proper python package or something for easy import and direct usage with your code until now. Feel free to simply use the files from [./src](./src/) and alter them according to your needs. They can then easily be imported to other python scripts or notebooks using pythons import logic. A HaGraD optimizer consists of the base class `Hagrad`, which can be imported from its source-file [hagrad.py](./src/hagrad.py), and a kinetic energy function's gradient. The kinetic energy is not fixed per se but we provide three standard choices that are also mentioned in [Maddison et al. (2018)](https://arxiv.org/abs/1809.05042), namely:
 - Classic Kinetic Energy: $$T = \frac{p^2}{2} \qquad \Rightarrow \qquad \nabla_pT = p .$$
@@ -105,3 +105,9 @@ model.fit(X, y, epochs=10, batch_size=32)
 ```
 
 This is basically the main-function from [hagrad.py](./src/hagrad.py) that can be run from the terminal using `python -m src.hagrad` (or comparable, depending on how the dependencies are managed).
+
+
+
+## Usage of HaGraD in PyTorch
+
+Please refer to the test-case in the [torch_hagrad.py](./src/torch_hagrad.py) source file. In torch the setup is a little longer and we do not want to extend this README even more. In short you should be able to use it just like the built in optimizers (just like in TensorFlow). Note that for the PyTorch version, we decided to not provide an extra class with Kinetic Energy Gradients. Just choose between `"relativistic"` and `"classical"` at initialization.
